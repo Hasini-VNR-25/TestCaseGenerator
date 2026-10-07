@@ -1,0 +1,38 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbproject/load-generator-state.xml
+
+### Visual Studio Code ###
+.vscode/
+
+### OS files ###
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+### H2 Database files (optional, comment out if you want to include seed DB) ###
+# data/*.db

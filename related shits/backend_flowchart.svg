@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1070.5290416666667 1280" width="1070.5290416666667" height="1280" style="--bg:#1F1F1F;--fg:#CCCCCC;--line:#CCCCCC;--accent:#0078D4;--muted:#CCCCCCCC;--surface:#181818;--border:#CCCCCC;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+  <marker id="arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+    <polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+</defs>
+<g class="subgraph" data-id="UI" data-label="Frontend / Studio (Port 8080)">
+  <rect x="95.57499999999999" y="40" width="242.15699999999995" height="198.70000000000002" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="95.57499999999999" y="40" width="242.15699999999995" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="107.57499999999999" y="54" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Frontend / Studio (Port 8080)</text>
+</g>
+<g class="subgraph" data-id="Pipeline" data-label="PipelineService.java (7-Step Engine)">
+  <rect x="40" y="298.70000000000005" width="639.9275" height="724.6" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="40" y="298.70000000000005" width="639.9275" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="52" y="312.70000000000005" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">PipelineService.java (7-Step Engine)</text>
+</g>
+<g class="subgraph" data-id="Storage" data-label="Database Layer (DBMS 3NF)">
+  <rect x="72.57804166666672" y="1095.3" width="253.27199999999996" height="144.7" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="72.57804166666672" y="1095.3" width="253.27199999999996" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="84.57804166666672" y="1109.3" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Database Layer (DBMS 3NF)</text>
+</g>
+<g class="subgraph" data-id="Output" data-label="Dashboard &amp; Telemetry">
+  <rect x="353.8500416666667" y="1095.3" width="676.679" height="113.80000000000001" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="353.8500416666667" y="1095.3" width="676.679" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="365.8500416666667" y="1109.3" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Dashboard &amp; Telemetry</text>
+</g>
+<polyline class="edge" data-from="Submit" data-to="S1" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="216.65349999999995,222.70000000000002 216.65349999999998,342.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="S2" data-to="DB" data-style="dotted" data-arrow-start="false" data-arrow-end="true" points="216.65349999999998,498.30000000000007 216.65349999999998,1073.3 199.2140416666667,1073.3 199.2140416666667,1139.3" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="S3" data-to="DB" data-style="dotted" data-arrow-start="false" data-arrow-end="true" points="300.25725,600.1 300.25725,1073.3 199.2140416666667,1073.3 199.2140416666667,1139.3" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="S5" data-to="DB" data-style="dotted" data-arrow-start="false" data-arrow-end="true" points="370.70825,803.7 370.70825,1073.3 199.2140416666667,1073.3 199.2140416666667,1139.3" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="S6" data-to="DB" data-style="dotted" data-arrow-start="false" data-arrow-end="true" points="441.90025,905.5 441.90025,1073.3 199.2140416666667,1073.3 199.2140416666667,1139.3" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="S7" data-to="DB" data-style="dotted" data-arrow-start="false" data-arrow-end="true" points="519.576,1007.3000000000001 519.576,1073.3 199.2140416666667,1073.3 199.2140416666667,1139.3" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="S7" data-to="Matrix" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="519.576,1007.3000000000001 519.576,1077.3000000000002 527.1690416666667,1077.3000000000002 527.1690416666667,1139.3" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="S7" data-to="Scores" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="591.75175,1007.3000000000001 591.75175,1077.3000000000002 863.5085416666667,1077.3000000000002 863.5085416666667,1139.3" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="UserCode" data-to="Submit" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="216.65349999999995,137.8 216.65349999999995,185.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="S1" data-to="S2" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="216.65349999999998,396.50000000000006 216.65349999999998,444.50000000000006" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="S2" data-to="S3" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="268.3521666666667,498.30000000000007 268.3521666666667,510.30000000000007 300.25725,510.30000000000007 300.25725,546.3000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="S3" data-to="S4" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="352.32641666666666,600.1000000000001 352.32641666666666,612.1000000000001 370.70824999999996,612.1000000000001 370.70824999999996,648.1000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="S4" data-to="S5" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="370.70824999999996,701.9000000000001 370.70825,749.9000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="S5" data-to="S6" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="411.41541666666666,803.7 411.41541666666666,815.7 441.90025,815.7 441.90025,851.7" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="S6" data-to="S7" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="485.6949166666667,905.5000000000001 485.6949166666667,917.5000000000001 519.576,917.5000000000001 519.576,953.5000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<g class="node" data-id="UserCode" data-label="User Enters Java Code
+(or uploads .java file)" data-shape="rectangle">
+  <rect x="126.39499999999997" y="84" width="180.517" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="216.65349999999995" y="110.9" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="216.65349999999995" dy="-3.9000000000000012">User Enters Java Code</tspan><tspan x="216.65349999999995" dy="16.900000000000002">(or uploads .java file)</tspan></text>
+</g>
+<g class="node" data-id="Submit" data-label="Click 'Run Intelligent Pipeline'" data-shape="rectangle">
+  <rect x="111.57499999999999" y="185.8" width="210.15699999999995" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="216.65349999999995" y="204.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Click &#39;Run Intelligent Pipeline&#39;</text>
+</g>
+<g class="node" data-id="S1" data-label="Step 1: AST Analysis
+(JavaParser extracts methods, types, SHA-256)" data-shape="rectangle">
+  <rect x="56" y="342.70000000000005" width="321.30699999999996" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="216.65349999999998" y="369.6" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="216.65349999999998" dy="-3.9000000000000012">Step 1: AST Analysis</tspan><tspan x="216.65349999999998" dy="16.900000000000002">(JavaParser extracts methods, types, SHA-256)</tspan></text>
+</g>
+<g class="node" data-id="S2" data-label="Step 2: Version Diffing
+(Compares AST with previous revisions in DB)" data-shape="rectangle">
+  <rect x="61.557500000000005" y="444.50000000000006" width="310.19199999999995" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="216.65349999999998" y="471.40000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="216.65349999999998" dy="-3.9000000000000012">Step 2: Version Diffing</tspan><tspan x="216.65349999999998" dy="16.900000000000002">(Compares AST with previous revisions in DB)</tspan></text>
+</g>
+<g class="node" data-id="S3" data-label="Step 3: Test Synthesis
+(BVA + ECP + Pairwise + OOP Contract Mocks)" data-shape="rectangle">
+  <rect x="144.04975" y="546.3000000000001" width="312.41499999999996" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="300.25725" y="573.2" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="300.25725" dy="-3.9000000000000012">Step 3: Test Synthesis</tspan><tspan x="300.25725" dy="16.900000000000002">(BVA + ECP + Pairwise + OOP Contract Mocks)</tspan></text>
+</g>
+<g class="node" data-id="S4" data-label="Step 4: Dynamic Compilation
+(javax.tools.JavaCompiler in memory)" data-shape="rectangle">
+  <rect x="240.80624999999998" y="648.1000000000001" width="259.804" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="370.70824999999996" y="675.0000000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="370.70824999999996" dy="-3.9000000000000012">Step 4: Dynamic Compilation</tspan><tspan x="370.70824999999996" dy="16.900000000000002">(javax.tools.JavaCompiler in memory)</tspan></text>
+</g>
+<g class="node" data-id="S5" data-label="Step 5: Test Execution &amp; Coverage
+(JUnit 5 Launcher + JaCoCo Core)" data-shape="rectangle">
+  <rect x="248.58675" y="749.9000000000001" width="244.243" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="370.70825" y="776.8000000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="370.70825" dy="-3.9000000000000012">Step 5: Test Execution &amp; Coverage</tspan><tspan x="370.70825" dy="16.900000000000002">(JUnit 5 Launcher + JaCoCo Core)</tspan></text>
+</g>
+<g class="node" data-id="S6" data-label="Step 6: AST Mutation Testing
+(Mutant Injection &amp; Kill Score Analysis)" data-shape="rectangle">
+  <rect x="310.51625" y="851.7" width="262.76800000000003" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="441.90025" y="878.6" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="441.90025" dy="-3.9000000000000012">Step 6: AST Mutation Testing</tspan><tspan x="441.90025" dy="16.900000000000002">(Mutant Injection &amp; Kill Score Analysis)</tspan></text>
+</g>
+<g class="node" data-id="S7" data-label="Step 7: Flaky Detection &amp; Minimization
+(Greedy Set-Cover &amp; Regression Ranking)" data-shape="rectangle">
+  <rect x="375.22450000000003" y="953.5000000000001" width="288.703" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="519.576" y="980.4000000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="519.576" dy="-3.9000000000000012">Step 7: Flaky Detection &amp; Minimization</tspan><tspan x="519.576" dy="16.900000000000002">(Greedy Set-Cover &amp; Regression Ranking)</tspan></text>
+</g>
+<g class="node" data-id="DB" data-label="10 Relational Tables
+classes, methods, test_cases,
+test_runs, coverage, mutations" data-shape="cylinder">
+  <rect x="88.57804166666672" y="1146.3" width="221.27199999999996" height="70.7" fill="var(--_node-fill)" stroke="none" />
+  <line x1="88.57804166666672" y1="1146.3" x2="88.57804166666672" y2="1217" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <line x1="309.8500416666667" y1="1146.3" x2="309.8500416666667" y2="1217" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="199.2140416666667" cy="1217" rx="110.63599999999998" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="199.2140416666667" cy="1146.3" rx="110.63599999999998" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="199.2140416666667" y="1181.6499999999999" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="199.2140416666667" dy="-12.350000000000001">10 Relational Tables</tspan><tspan x="199.2140416666667" dy="16.900000000000002">classes, methods, test_cases,</tspan><tspan x="199.2140416666667" dy="16.900000000000002">test_runs, coverage, mutations</tspan></text>
+</g>
+<g class="node" data-id="Matrix" data-label="Test Suite Matrix
+(Status, Plain-English Fix, Sub-Function Trace)" data-shape="rectangle">
+  <rect x="369.8500416666667" y="1139.3" width="314.638" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="527.1690416666667" y="1166.2" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="527.1690416666667" dy="-3.9000000000000012">Test Suite Matrix</tspan><tspan x="527.1690416666667" dy="16.900000000000002">(Status, Plain-English Fix, Sub-Function Trace)</tspan></text>
+</g>
+<g class="node" data-id="Scores" data-label="KPI Cards
+(Mutation Score %, Line/Branch Coverage %)" data-shape="rectangle">
+  <rect x="712.4880416666667" y="1139.3" width="302.041" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="863.5085416666667" y="1166.2" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="863.5085416666667" dy="-3.9000000000000012">KPI Cards</tspan><tspan x="863.5085416666667" dy="16.900000000000002">(Mutation Score %, Line/Branch Coverage %)</tspan></text>
+</g>
+</svg>

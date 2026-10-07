@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::#content})}">
+<head><title>Studio — TESTGEN</title></head>
+<body>
+<div id="content" class="space-y-6">
+
+    <!-- Top Studio Header -->
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+                <i data-lucide="sparkles" class="w-6 h-6 text-cyan-400"></i>
+                Test Synthesis Studio
+            </h1>
+            <p class="text-xs text-slate-400 mt-1 font-mono">
+                Upload or paste your personal Java classes to generate comprehensive JUnit 5 test suites with AST mutation analysis.
+            </p>
+        </div>
+    </div>
+
+    <!-- Generator & Studio Form -->
+    <form action="/generate" method="post" enctype="multipart/form-data" class="space-y-6" id="studioForm">
+
+        <div class="p-6 rounded-2xl bg-dark-900 border border-dark-800/80 shadow-xl space-y-5">
+            
+            <!-- Project Identifier & Mode Header -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-dark-800">
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <label for="projectName" class="text-xs font-mono font-bold text-slate-300">PROJECT / MODULE:</label>
+                    <input type="text" id="projectName" name="projectName" th:value="${projectName != null ? projectName : 'my-java-app'}" required
+                           placeholder="e.g. payment-service"
+                           class="px-3.5 py-1.5 rounded-lg bg-dark-950 border border-dark-800 text-cyan-300 font-mono text-xs focus:outline-none focus:border-cyan-500 w-56">
+                </div>
+
+                <!-- Secondary Example Loader (Optional) -->
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] font-mono text-slate-500">Need an example?</span>
+                    <select id="exampleSelect" onchange="if(this.value) loadExample(this.value);"
+                            class="px-2.5 py-1 rounded-lg bg-dark-950 border border-dark-800 text-slate-400 text-xs font-mono focus:outline-none focus:border-cyan-500">
+                        <option value="">-- Load Example Template --</option>
+                        <option value="BillingService">BillingService.java (Caller &amp; Sub-Function Chain)</option>
+                        <option value="BankAccount">BankAccount.java (State & Boundaries)</option>
+                        <option value="Calculator">Calculator.java (Math & Prime Loops)</option>
+                        <option value="InventoryManager">InventoryManager.java (OOP & Mocks)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Upload Area & File Dropzone -->
+            <div id="dropZone" class="p-6 rounded-xl border-2 border-dashed border-dark-700 hover:border-cyan-500/60 bg-dark-950/60 transition text-center space-y-2 cursor-pointer relative">
+                <input type="file" id="fileInput" name="file" accept=".java" onchange="handleFileUpload(this)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                <div class="inline-flex p-3 rounded-xl bg-dark-850 text-cyan-400 border border-dark-700">
+                    <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                </div>
+                <div class="space-y-0.5">
+                    <div class="text-xs font-mono font-bold text-white">
+                        <span class="text-cyan-400">Click to upload your .java file</span> or drag and drop here
+                    </div>
+                    <div class="text-[11px] font-mono text-slate-500" id="uploadFilename">
+                        Supports any custom Java class (e.g. UserService.java, OrderCalculator.java)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Editor Box -->
+            <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                    <label for="sourceCode" class="text-xs font-mono font-semibold text-slate-300 flex items-center gap-2">
+                        <i data-lucide="file-code-2" class="w-4 h-4 text-cyan-400"></i> OR PASTE JAVA SOURCE CODE DIRECTLY
+                    </label>
+
+                    <button type="button" onclick="clearEditor()" class="text-[11px] text-slate-500 hover:text-rose-400 font-mono transition">
+                        Clear Editor
+                    </button>
+                </div>
+
+                <div class="relative rounded-xl border border-dark-800 overflow-hidden bg-dark-950">
+                    <textarea id="sourceCode" name="sourceCode" rows="16" th:text="${sourceCode}"
+                              placeholder="// Paste your personal Java class code here...
+// Example:
+package com.myapp;
+
+public class OrderService {
+    private double balance;
+
+    public void processOrder(double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException(&quot;Invalid amount&quot;);
+        }
+        this.balance += amount;
+    }
+}"
+                              class="w-full p-4 bg-dark-950 text-emerald-400 font-mono text-xs focus:outline-none leading-relaxed resize-y"></textarea>
+                </div>
+            </div>
+
+            <!-- Engine Configuration Switches Strip -->
+            <div class="pt-3 border-t border-dark-800 flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
+                <div class="flex flex-wrap items-center gap-4 text-slate-300">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked disabled class="accent-cyan-500 rounded">
+                        <span class="text-slate-300">AST Mutation Testing</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked disabled class="accent-cyan-500 rounded">
+                        <span class="text-slate-300">Suite Minimizer</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked disabled class="accent-cyan-500 rounded">
+                        <span class="text-slate-300">Flaky Shield</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked disabled class="accent-cyan-500 rounded">
+                        <span class="text-slate-300">Regression Diffs</span>
+                    </label>
+                </div>
+
+                <!-- Submit Action Button -->
+                <button type="submit" id="executeBtn"
+                        class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-600/25 active:scale-[0.98]">
+                    <i data-lucide="play" class="w-4 h-4 fill-white"></i> Synthesize &amp; Execute Suite
+                </button>
+            </div>
+        </div>
+
+        <!-- Real-Time Pipeline Execution Modal / Overlay -->
+        <div id="executionOverlay" class="hidden p-6 rounded-2xl bg-dark-900/90 border border-cyan-500/40 backdrop-blur-md shadow-2xl text-center space-y-4 animate-fade-in">
+            <div class="inline-flex items-center justify-center p-3 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 animate-pulse">
+                <i data-lucide="cpu" class="w-7 h-7"></i>
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-base font-bold text-white font-mono">Synthesizing &amp; Running Test Suite</h3>
+                <p class="text-xs text-slate-400 font-mono">
+                    AST Parsing &bull; Boundary/Combinatorial Matrices &bull; Dynamic Compilation &bull; JaCoCo &bull; AST Mutation Testing
+                </p>
+            </div>
+            <div class="w-48 mx-auto bg-dark-950 rounded-full h-1.5 overflow-hidden border border-dark-800">
+                <div class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full w-2/3 animate-pulse"></div>
+            </div>
+        </div>
+    </form>
+
+    <script>
+        async function loadExample(name) {
+            try {
+                const res = await fetch('/api/samples/' + name);
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('sourceCode').value = data.code;
+                    document.getElementById('uploadFilename').innerText = 'Loaded example template: ' + name + '.java';
+                }
+            } catch (e) {
+                console.error('Failed to load example', e);
+            }
+        }
+
+        function clearEditor() {
+            document.getElementById('sourceCode').value = '';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('uploadFilename').innerText = 'Supports any custom Java class (e.g. UserService.java, OrderCalculator.java)';
+        }
+
+        function handleFileUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                document.getElementById('uploadFilename').innerText = 'Selected file: ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('sourceCode').value = e.target.result;
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        // Drag & drop highlight
+        const dropZone = document.getElementById('dropZone');
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-cyan-500', 'bg-dark-850');
+            }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-cyan-500', 'bg-dark-850');
+            }, false);
+        });
+
+        document.getElementById('studioForm').addEventListener('submit', () => {
+            document.getElementById('executeBtn').disabled = true;
+            document.getElementById('executionOverlay').classList.remove('hidden');
+        });
+    </script>
+</div>
+</body>
+</html>

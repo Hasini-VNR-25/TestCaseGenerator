@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::#console-content})}">
+<head>
+    <title>Direct SQL Console — TESTGEN</title>
+</head>
+<body>
+<div id="console-content" class="space-y-6">
+
+    <!-- Top Console Banner & DB Connection Status -->
+    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-dark-800/80">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+                <i data-lucide="database" class="w-6 h-6 text-cyan-400"></i>
+                Direct SQL Database Console
+            </h1>
+            <p class="text-xs text-slate-400 mt-1 font-mono">
+                Direct, zero-login interactive relational database explorer & query executor.
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-dark-900 border border-emerald-500/30 text-emerald-400 text-xs font-mono shadow-sm">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="font-bold" th:text="${dbProduct != null ? dbProduct : 'MySQL Database'}">MySQL</span>
+                <span class="text-slate-500">|</span>
+                <span class="text-slate-300 truncate max-w-[260px]" th:text="${dbUrl != null ? dbUrl : 'Connected'}">Connected</span>
+            </div>
+            
+            <button type="button" onclick="refreshSchema()" title="Refresh database tables and schema"
+                    class="p-2 rounded-xl bg-dark-900 border border-dark-800 hover:border-cyan-500/50 text-slate-400 hover:text-cyan-300 transition">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Query Presets -->
+    <div class="p-4 rounded-xl bg-dark-900 border border-dark-800/80 space-y-2.5">
+        <div class="flex items-center justify-between">
+            <span class="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> Quick Query Presets
+            </span>
+            <span class="text-[10px] text-slate-500 font-mono">Click to load & execute query</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="loadPreset('classes')"
+                    class="px-2.5 py-1 rounded-lg bg-dark-950 border border-dark-700 hover:border-cyan-500 text-slate-300 hover:text-cyan-300 font-mono text-[11px] transition">
+                📂 Classes
+            </button>
+            <button type="button" onclick="loadPreset('test_cases')"
+                    class="px-2.5 py-1 rounded-lg bg-dark-950 border border-dark-700 hover:border-cyan-500 text-slate-300 hover:text-cyan-300 font-mono text-[11px] transition">
+                🧪 Test Cases
+            </button>
+            <button type="button" onclick="loadPreset('test_runs')"
+                    class="px-2.5 py-1 rounded-lg bg-dark-950 border border-dark-700 hover:border-cyan-500 text-slate-300 hover:text-cyan-300 font-mono text-[11px] transition">
+                ⏱️ Test Runs
+            </button>
+            <button type="button" onclick="loadPreset('coverage_results')"
+                    class="px-2.5 py-1 rounded-lg bg-dark-950 border border-dark-700 hover:border-cyan-500 text-slate-300 hover:text-cyan-300 font-mono text-[11px] transition">
+                📊 Coverage Metrics
+            </button>
+            <button type="button" onclick="loadPreset('mutation_results')"
+                    class="px-2.5 py-1 rounded-lg bg-dark-950 border border-dark-700 hover:border-cyan-500 text-slate-300 hover:text-cyan-300 font-mono text-[11px] transition">
+                🧬 Mutation Results
+            </button>
+            <button type="button" onclick="loadPreset('flaky_tests')"
+                    class="px-2.5 py-1 rounded-lg bg-dark-950 border border-dark-700 hover:border-cyan-500 text-slate-300 hover:text-cyan-300 font-mono text-[11px] transition">
+                ⚠️ Flaky Tests
+            </button>
+            <button type="button" onclick="loadPreset('latest_class_health')"
+                    class="px-2.5 py-1 rounded-lg bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-900/60 font-mono text-[11px] font-semibold transition">
+                ✨ View: latest_class_health
+            </button>
+            <button type="button" onclick="loadPreset('failed_tests')"
+                    class="px-2.5 py-1 rounded-lg bg-rose-950/40 border border-rose-500/30 text-rose-300 hover:bg-rose-900/50 font-mono text-[11px] transition">
+                ❌ Failed Test Details
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Workspace Grid: Table Browser (Left) + SQL Editor & Results (Right) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Schema & Table Explorer (4 cols) -->
+        <div class="lg:col-span-4 bg-dark-900 border border-dark-800/80 rounded-2xl p-4 flex flex-col h-[750px] shadow-lg">
+            <div class="flex items-center justify-between pb-3 border-b border-dark-800">
+                <div class="flex items-center gap-2 text-xs font-mono font-bold text-slate-200">
+                    <i data-lucide="layers" class="w-4 h-4 text-cyan-400"></i>
+                    TABLES & VIEWS
+                </div>
+                <span id="tableCountBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-dark-950 border border-dark-700 text-slate-400">0</span>
+            </div>
+
+            <!-- Table Search -->
+            <div class="mt-3 mb-2">
+                <input type="text" id="tableFilterInput" onkeyup="filterTables()" placeholder="Search tables..."
+                       class="w-full px-3 py-1.5 rounded-lg bg-dark-950 border border-dark-800 text-xs font-mono text-slate-300 placeholder-slate-600 focus:outline-none focus:border-cyan-500">
+            </div>
+
+            <!-- Scrollable Tables Tree -->
+            <div id="tableTreeContainer" class="flex-1 overflow-y-auto space-y-1.5 pr-1 mt-1">
+                <div class="p-4 text-center text-xs text-slate-500 font-mono animate-pulse">
+                    Loading schema metadata...
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Query Editor & Live Results Grid (8 cols) -->
+        <div class="lg:col-span-8 flex flex-col gap-6">
+
+            <!-- SQL Query Editor Box -->
+            <div class="bg-dark-900 border border-dark-800/80 rounded-2xl p-5 shadow-lg space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="code" class="w-4 h-4 text-cyan-400"></i>
+                        <span class="text-xs font-mono font-bold text-slate-200">SQL QUERY EDITOR</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-[11px] font-mono text-slate-500">
+                        <span>Press <kbd class="px-1.5 py-0.5 rounded bg-dark-800 border border-dark-700 text-slate-300">Ctrl</kbd> + <kbd class="px-1.5 py-0.5 rounded bg-dark-800 border border-dark-700 text-slate-300">Enter</kbd> to run</span>
+                    </div>
+                </div>
+
+                <!-- Textarea for SQL Query -->
+                <div class="relative">
+                    <textarea id="sqlQueryInput" rows="5" spellcheck="false"
+                              placeholder="SELECT * FROM classes LIMIT 50;"
+                              class="w-full p-4 rounded-xl bg-dark-950 border border-dark-800 text-cyan-300 font-mono text-xs leading-relaxed focus:outline-none focus:border-cyan-500 shadow-inner resize-y"></textarea>
+                </div>
+
+                <!-- Action Bar -->
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="executeQuery()" id="runBtn"
+                                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold text-xs transition shadow-lg shadow-cyan-600/20 active:scale-[0.98]">
+                            <i data-lucide="play" class="w-4 h-4"></i> Run Query
+                        </button>
+                        <button type="button" onclick="clearEditor()"
+                                class="px-3.5 py-2.5 rounded-xl bg-dark-950 border border-dark-800 hover:border-dark-700 text-slate-400 hover:text-slate-200 font-mono text-xs transition">
+                            Clear
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="exportCsv()" id="exportCsvBtn"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-dark-950 border border-dark-800 hover:border-cyan-500/50 text-slate-300 hover:text-cyan-300 font-mono text-xs transition">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Query Results Panel -->
+            <div class="bg-dark-900 border border-dark-800/80 rounded-2xl p-5 shadow-lg flex flex-col min-h-[420px]">
+                
+                <!-- Results Header & Status Indicator -->
+                <div class="flex items-center justify-between pb-3 border-b border-dark-800">
+                    <div class="flex items-center gap-2 text-xs font-mono font-bold text-slate-200">
+                        <i data-lucide="table" class="w-4 h-4 text-cyan-400"></i>
+                        EXECUTION RESULTS
+                    </div>
+                    
+                    <div id="resultMetaBadge" class="hidden text-xs font-mono flex items-center gap-2">
+                        <span id="timingBadge" class="px-2 py-0.5 rounded-md bg-dark-950 border border-dark-800 text-slate-400">0 ms</span>
+                        <span id="rowCountBadge" class="px-2 py-0.5 rounded-md bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 font-bold">0 rows</span>
+                    </div>
+                </div>
+
+                <!-- Error Box -->
+                <div id="queryErrorBox" class="hidden mt-4 p-4 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-mono space-y-1">
+                    <div class="flex items-center gap-2 font-bold text-rose-400">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"></i>
+                        <span>SQL Execution Error</span>
+                    </div>
+                    <div id="queryErrorMessage" class="pl-6 text-rose-200"></div>
+                </div>
+
+                <!-- Success Message for DML/DDL -->
+                <div id="querySuccessBox" class="hidden mt-4 p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                    <span id="querySuccessMessage">Query executed successfully.</span>
+                </div>
+
+                <!-- Empty Initial State -->
+                <div id="resultsEmptyState" class="flex-1 flex flex-col items-center justify-center py-16 text-center text-slate-500 space-y-3">
+                    <div class="w-12 h-12 rounded-2xl bg-dark-950 border border-dark-800 flex items-center justify-center text-slate-600">
+                        <i data-lucide="terminal" class="w-6 h-6"></i>
+                    </div>
+                    <div class="text-xs font-mono">
+                        Run a query or click a table on the left to view data.
+                    </div>
+                </div>
+
+                <!-- Results Table Container -->
+                <div id="resultsTableContainer" class="hidden flex-1 overflow-x-auto mt-4 max-h-[500px] border border-dark-800 rounded-xl">
+                    <table class="w-full text-left text-xs font-mono border-collapse">
+                        <thead id="resultsTableHead" class="bg-dark-950 sticky top-0 border-b border-dark-800 text-slate-400 select-none">
+                            <!-- Injected Dynamically -->
+                        </thead>
+                        <tbody id="resultsTableBody" class="divide-y divide-dark-800/60 text-slate-300">
+                            <!-- Injected Dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Cell Detail Modal (for CLOB / Long code view) -->
+    <div id="cellDetailModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+        <div class="bg-dark-900 border border-dark-700 rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+            <div class="p-4 border-b border-dark-800 flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-white flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-4 h-4 text-cyan-400"></i>
+                    <span id="cellModalTitle">Cell Content Inspector</span>
+                </span>
+                <button type="button" onclick="closeCellModal()" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-dark-800">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="p-4 flex-1 overflow-auto bg-dark-950 font-mono text-xs text-cyan-300 whitespace-pre-wrap leading-relaxed">
+                <code id="cellModalBody"></code>
+            </div>
+            <div class="p-3 border-t border-dark-800 flex justify-end">
+                <button type="button" onclick="closeCellModal()" class="px-4 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-200 text-xs font-mono">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let currentSchema = [];
+
+    const PRESETS = {
+        'classes': 'SELECT id, class_name, package_name, super_class, interfaces, source_hash FROM classes ORDER BY id DESC;',
+        'test_cases': 'SELECT id, class_id, test_name, test_type, assertion_count, is_weak, description FROM test_cases ORDER BY id DESC;',
+        'test_runs': 'SELECT id, project_id, run_timestamp, triggered_by, total_tests, passed_tests, failed_tests, execution_duration_ms FROM test_runs ORDER BY id DESC;',
+        'coverage_results': 'SELECT id, class_id, run_id, line_coverage_pct, branch_coverage_pct, lines_covered, total_lines FROM coverage_results ORDER BY id DESC;',
+        'mutation_results': 'SELECT id, class_id, run_id, total_mutants, mutants_killed, mutation_score_pct FROM mutation_results ORDER BY id DESC;',
+        'flaky_tests': 'SELECT id, test_case_id, run_id, detected_on, inconsistency_count, pass_rate_pct FROM flaky_tests ORDER BY id DESC;',
+        'latest_class_health': 'SELECT * FROM latest_class_health;',
+        'failed_tests': "SELECT tr.id, tc.test_name, tr.status, tr.execution_time_ms, tr.error_message FROM test_results tr JOIN test_cases tc ON tr.test_case_id = tc.id WHERE tr.status != 'PASSED' ORDER BY tr.id DESC;"
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshSchema();
+
+        // Keyboard Shortcut: Ctrl + Enter
+        document.getElementById('sqlQueryInput').addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                executeQuery();
+            }
+        });
+
+        // Auto load classes preset on initial landing
+        loadPreset('classes');
+    });
+
+    async function refreshSchema() {
+        const container = document.getElementById('tableTreeContainer');
+        try {
+            const res = await fetch('/api/sql/tables');
+            if (res.ok) {
+                currentSchema = await res.json();
+                renderTableTree(currentSchema);
+            } else {
+                container.innerHTML = '<div class="p-4 text-center text-xs text-rose-400 font-mono">Failed to load schema.<br><button onclick="refreshSchema()" class="mt-2 px-2 py-1 bg-dark-800 rounded text-cyan-400 hover:underline">Retry</button></div>';
+            }
+        } catch (e) {
+            console.error('Failed to load schema', e);
+            container.innerHTML = '<div class="p-4 text-center text-xs text-rose-400 font-mono">Connection error.<br><button onclick="refreshSchema()" class="mt-2 px-2 py-1 bg-dark-800 rounded text-cyan-400 hover:underline">Retry</button></div>';
+        }
+    }
+
+    function renderTableTree(tables) {
+        const container = document.getElementById('tableTreeContainer');
+        const badge = document.getElementById('tableCountBadge');
+        badge.innerText = tables.length;
+
+        if (tables.length === 0) {
+            container.innerHTML = '<div class="p-4 text-center text-xs text-slate-500 font-mono">No tables found.</div>';
+            return;
+        }
+
+        container.innerHTML = tables.map(t => {
+            const isView = t.type === 'VIEW';
+            const icon = isView ? 'eye' : 'table';
+            const countTag = t.rowCount !== undefined && !isView 
+                ? `<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-dark-950 text-slate-400 border border-dark-800">${t.rowCount}</span>` 
+                : (isView ? '<span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-blue-950 text-cyan-400 border border-cyan-800">VIEW</span>' : '');
+
+            const colsHtml = (t.columns || []).map(c => `
+                <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 py-0.5 px-2 hover:text-cyan-300">
+                    <span>${c.name}</span>
+                    <span class="text-slate-600 text-[9px]">${c.type.toLowerCase()}</span>
+                </div>
+            `).join('');
+
+            return `
+                <div class="table-item rounded-xl border border-dark-800/80 bg-dark-950/50 overflow-hidden" data-name="${t.tableName.toLowerCase()}">
+                    <div class="flex items-center justify-between p-2.5 hover:bg-dark-800/50 cursor-pointer group transition"
+                         onclick="selectQuickTable('${t.tableName}')">
+                        <div class="flex items-center gap-2 truncate">
+                            <i data-lucide="${icon}" class="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition shrink-0"></i>
+                            <span class="font-mono text-xs font-semibold text-slate-200 group-hover:text-cyan-300 truncate">${t.tableName}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            ${countTag}
+                            <button type="button" onclick="event.stopPropagation(); toggleColumns('${t.tableName}')"
+                                    class="text-slate-600 hover:text-slate-300 p-0.5 transition">
+                                <i data-lucide="chevron-down" id="chevron-${t.tableName}" class="w-3 h-3"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="cols-${t.tableName}" class="hidden border-t border-dark-800/60 bg-dark-950 px-2 py-1.5 space-y-0.5">
+                        ${colsHtml}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        lucide.createIcons();
+    }
+
+    function toggleColumns(tableName) {
+        const div = document.getElementById(`cols-${tableName}`);
+        const chevron = document.getElementById(`chevron-${tableName}`);
+        if (div) {
+            div.classList.toggle('hidden');
+            if (chevron) {
+                chevron.style.transform = div.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+            }
+        }
+    }
+
+    function filterTables() {
+        const q = document.getElementById('tableFilterInput').value.toLowerCase();
+        const items = document.querySelectorAll('.table-item');
+        items.forEach(it => {
+            const name = it.getAttribute('data-name');
+            it.style.display = name.includes(q) ? 'block' : 'none';
+        });
+    }
+
+    function loadPreset(key) {
+        if (PRESETS[key]) {
+            document.getElementById('sqlQueryInput').value = PRESETS[key];
+            executeQuery();
+        }
+    }
+
+    function selectQuickTable(tableName) {
+        document.getElementById('sqlQueryInput').value = `SELECT * FROM ${tableName} LIMIT 50;`;
+        executeQuery();
+    }
+
+    function clearEditor() {
+        document.getElementById('sqlQueryInput').value = '';
+        document.getElementById('sqlQueryInput').focus();
+    }
+
+    async function executeQuery() {
+        let query = document.getElementById('sqlQueryInput').value.trim();
+        if (!query) {
+            query = "SELECT * FROM classes LIMIT 50;";
+            document.getElementById('sqlQueryInput').value = query;
+        }
+
+        const errorBox = document.getElementById('queryErrorBox');
+        const successBox = document.getElementById('querySuccessBox');
+        const emptyState = document.getElementById('resultsEmptyState');
+        const tableContainer = document.getElementById('resultsTableContainer');
+        const metaBadge = document.getElementById('resultMetaBadge');
+        const timingBadge = document.getElementById('timingBadge');
+        const rowCountBadge = document.getElementById('rowCountBadge');
+
+        errorBox.classList.add('hidden');
+        successBox.classList.add('hidden');
+
+        try {
+            const res = await fetch('/api/sql/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
+
+            const data = await res.json();
+
+            metaBadge.classList.remove('hidden');
+            timingBadge.innerText = `${data.executionTimeMs || 0} ms`;
+
+            if (!data.success) {
+                errorBox.classList.remove('hidden');
+                document.getElementById('queryErrorMessage').innerText = data.errorMessage || 'Unknown SQL syntax error';
+                emptyState.classList.add('hidden');
+                tableContainer.classList.add('hidden');
+                rowCountBadge.innerText = 'Error';
+                rowCountBadge.className = 'px-2 py-0.5 rounded-md bg-rose-950/80 border border-rose-500/30 text-rose-300 font-bold';
+                return;
+            }
+
+            if (data.queryType === 'SELECT') {
+                emptyState.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
+                rowCountBadge.innerText = `${data.rowCount || 0} rows`;
+                rowCountBadge.className = 'px-2 py-0.5 rounded-md bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 font-bold';
+
+                renderResultsTable(data.columns, data.rows);
+            } else {
+                tableContainer.classList.add('hidden');
+                emptyState.classList.add('hidden');
+                successBox.classList.remove('hidden');
+                document.getElementById('querySuccessMessage').innerText = data.message || `Query executed. Affected rows: ${data.affectedRows}`;
+                rowCountBadge.innerText = `${data.affectedRows} affected`;
+                rowCountBadge.className = 'px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 font-bold';
+                refreshSchema();
+            }
+
+        } catch (e) {
+            errorBox.classList.remove('hidden');
+            document.getElementById('queryErrorMessage').innerText = e.message;
+        }
+    }
+
+    function renderResultsTable(columns, rows) {
+        const thead = document.getElementById('resultsTableHead');
+        const tbody = document.getElementById('resultsTableBody');
+
+        // Header
+        thead.innerHTML = `<tr>
+            <th class="p-2.5 text-center text-slate-500 w-12">#</th>
+            ${columns.map(c => `<th class="p-2.5 font-bold tracking-wider uppercase text-[10px] text-slate-300">${c}</th>`).join('')}
+        </tr>`;
+
+        // Body
+        if (rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="${columns.length + 1}" class="p-6 text-center text-slate-500 font-mono">Query returned 0 rows.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = rows.map((r, ri) => `
+            <tr class="hover:bg-dark-850/80 transition">
+                <td class="p-2.5 text-center text-slate-600 text-[10px]">${ri + 1}</td>
+                ${r.map(val => {
+                    if (val === null || val === undefined) {
+                        return `<td class="p-2.5 text-slate-600 italic">NULL</td>`;
+                    }
+                    const str = String(val);
+                    if (str.length > 60 || str.includes('\n')) {
+                        const escaped = str.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                        return `<td class="p-2.5 text-cyan-400 hover:underline cursor-pointer truncate max-w-[200px]"
+                                    onclick="openCellModal('${columns[0] || 'Data'}', ${JSON.stringify(str)})">
+                                    ${str.substring(0, 50)}... [view]
+                                </td>`;
+                    }
+                    return `<td class="p-2.5 truncate max-w-[250px]">${str}</td>`;
+                }).join('')}
+            </tr>
+        `).join('');
+    }
+
+    function openCellModal(title, text) {
+        document.getElementById('cellModalTitle').innerText = title;
+        document.getElementById('cellModalBody').innerText = text;
+        document.getElementById('cellDetailModal').classList.remove('hidden');
+    }
+
+    function closeCellModal() {
+        document.getElementById('cellDetailModal').classList.add('hidden');
+    }
+
+    function exportCsv() {
+        const query = document.getElementById('sqlQueryInput').value.trim();
+        if (!query) {
+            alert('Please enter a SQL query to export.');
+            return;
+        }
+        window.location.href = `/api/sql/export-csv?query=${encodeURIComponent(query)}`;
+    }
+</script>
+</body>
+</html>

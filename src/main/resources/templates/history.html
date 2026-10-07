@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::#content})}">
+<head><title>Analytics &amp; History — TESTGEN</title></head>
+<body>
+<div id="content" class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-2xl bg-dark-900 border border-dark-800 shadow-xl">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+                <i data-lucide="trending-up" class="w-6 h-6 text-cyan-400"></i>
+                Historical Analytics &amp; Quality Trends
+            </h1>
+            <p class="text-xs text-slate-400 mt-1 font-mono">
+                Telemetry stored across test sessions tracking mutation score, line/branch coverage, and flaky test stability.
+            </p>
+        </div>
+
+        <!-- Target Filter Dropdown -->
+        <form method="get" action="/history" class="flex items-center gap-2 font-mono">
+            <label for="classSelect" class="text-xs text-slate-400">TARGET:</label>
+            <select id="classSelect" name="classId" onchange="this.form.submit()"
+                    class="px-3 py-2 rounded-xl bg-dark-950 border border-dark-800 text-cyan-300 text-xs font-medium focus:outline-none focus:border-cyan-500">
+                <option th:each="c : ${classes}" th:value="${c.id}" th:text="${c.className}"
+                        th:selected="${selectedClass != null and selectedClass.id == c.id}">Class</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- Trend Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Coverage Progression Chart -->
+        <div class="p-5 rounded-2xl bg-dark-900 border border-dark-800/80 shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="line-chart" class="w-4 h-4 text-cyan-400"></i> Coverage Trend (Line &amp; Branch %)
+                </h3>
+                <span class="text-[10px] font-mono text-slate-400">JaCoCo</span>
+            </div>
+            <div class="h-64">
+                <canvas id="coverageChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Mutation Score Progression Chart -->
+        <div class="p-5 rounded-2xl bg-dark-900 border border-dark-800/80 shadow-md space-y-3">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i> Mutation Score Progression (%)
+                </h3>
+                <span class="text-[10px] font-mono text-slate-400">Defect Resilience</span>
+            </div>
+            <div class="h-64">
+                <canvas id="mutationChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flaky Tests Detector Log -->
+    <div class="p-6 rounded-2xl bg-dark-900 border border-dark-800/80 space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i> Flaky Test Shield History
+            </h3>
+            <span class="text-xs font-mono text-slate-400">Multi-iteration stability check</span>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-dark-800 bg-dark-950">
+            <table class="w-full text-left text-xs font-mono">
+                <thead class="bg-dark-950 text-slate-400 uppercase text-[11px] font-bold border-b border-dark-800">
+                    <tr>
+                        <th class="p-3">Test Identifier</th>
+                        <th class="p-3">Class</th>
+                        <th class="p-3">Detected Timestamp</th>
+                        <th class="p-3">Inconsistencies</th>
+                        <th class="p-3">Pass Rate</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-dark-800/60 bg-dark-900/60">
+                    <tr th:each="f : ${flakyTests}" class="hover:bg-dark-850/60 transition">
+                        <td class="p-3 font-bold text-amber-400" th:text="${f.testCase.testName}">testName</td>
+                        <td class="p-3 text-slate-300" th:text="${f.testCase.classMetadata.className}">Class</td>
+                        <td class="p-3 text-slate-400" th:text="${f.detectedOn}">date</td>
+                        <td class="p-3 font-bold text-rose-400" th:text="${f.inconsistencyCount}">1</td>
+                        <td class="p-3 font-bold text-slate-200" th:text="${f.passRatePct + '%'}">66.7%</td>
+                    </tr>
+                    <tr th:if="${flakyTests.isEmpty()}">
+                        <td colspan="5" class="p-6 text-center text-slate-500">No flaky tests detected. All generated test suites executed deterministically.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Execution Run Sessions Log -->
+    <div class="p-6 rounded-2xl bg-dark-900 border border-dark-800/80 space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="history" class="w-4 h-4 text-cyan-400"></i> Execution Sessions Log
+            </h3>
+            <span class="text-xs font-mono text-slate-400" th:text="${allRuns.size() + ' sessions'}">0 sessions</span>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-dark-800 bg-dark-950">
+            <table class="w-full text-left text-xs font-mono">
+                <thead class="bg-dark-950 text-slate-400 uppercase text-[11px] font-bold border-b border-dark-800">
+                    <tr>
+                        <th class="p-3">Session</th>
+                        <th class="p-3">Timestamp</th>
+                        <th class="p-3">Initiator</th>
+                        <th class="p-3">Total Tests</th>
+                        <th class="p-3">Passed</th>
+                        <th class="p-3">Failed</th>
+                        <th class="p-3">Execution Time</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-dark-800/60 bg-dark-900/60">
+                    <tr th:each="r : ${allRuns}" class="hover:bg-dark-850/60 transition">
+                        <td class="p-3 font-bold text-cyan-400" th:text="'#' + ${r.id}">#1</td>
+                        <td class="p-3 text-slate-300" th:text="${r.runTimestamp}">timestamp</td>
+                        <td class="p-3 text-slate-400" th:text="${r.triggeredBy}">AutoPipeline</td>
+                        <td class="p-3 font-bold text-white" th:text="${r.totalTests}">12</td>
+                        <td class="p-3 font-bold text-emerald-400" th:text="${r.passedTests}">12</td>
+                        <td class="p-3 font-bold text-rose-400" th:text="${r.failedTests}">0</td>
+                        <td class="p-3 text-slate-400" th:text="${r.executionDurationMs + ' ms'}">150 ms</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const selectedClassId = /*[[${selectedClass != null ? selectedClass.id : 0}]]*/ 0;
+        /*]]>*/
+
+        async function initCharts() {
+            if (!selectedClassId) return;
+            try {
+                const res = await fetch('/api/trends/' + selectedClassId);
+                if (res.ok) {
+                    const data = await res.json();
+
+                    // Coverage Chart
+                    const covCtx = document.getElementById('coverageChart').getContext('2d');
+                    new Chart(covCtx, {
+                        type: 'line',
+                        data: {
+                            labels: data.labels && data.labels.length > 0 ? data.labels : ['Run 1'],
+                            datasets: [
+                                {
+                                    label: 'Line Coverage (%)',
+                                    data: data.lineCoverage && data.lineCoverage.length > 0 ? data.lineCoverage : [90],
+                                    borderColor: '#38bdf8',
+                                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                                    tension: 0.3,
+                                    fill: true
+                                },
+                                {
+                                    label: 'Branch Coverage (%)',
+                                    data: data.branchCoverage && data.branchCoverage.length > 0 ? data.branchCoverage : [80],
+                                    borderColor: '#6366f1',
+                                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                    tension: 0.3,
+                                    fill: true
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { min: 0, max: 100, grid: { color: '#182030' }, ticks: { color: '#64748b' } },
+                                x: { grid: { color: '#182030' }, ticks: { color: '#64748b' } }
+                            },
+                            plugins: { legend: { labels: { color: '#cbd5e1' } } }
+                        }
+                    });
+
+                    // Mutation Score Chart
+                    const mutCtx = document.getElementById('mutationChart').getContext('2d');
+                    new Chart(mutCtx, {
+                        type: 'line',
+                        data: {
+                            labels: data.labels && data.labels.length > 0 ? data.labels : ['Run 1'],
+                            datasets: [
+                                {
+                                    label: 'Mutation Score (%)',
+                                    data: data.mutationScore && data.mutationScore.length > 0 ? data.mutationScore : [100],
+                                    borderColor: '#10b981',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                    tension: 0.3,
+                                    fill: true
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { min: 0, max: 100, grid: { color: '#182030' }, ticks: { color: '#64748b' } },
+                                x: { grid: { color: '#182030' }, ticks: { color: '#64748b' } }
+                            },
+                            plugins: { legend: { labels: { color: '#cbd5e1' } } }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to load chart trends', e);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', initCharts);
+    </script>
+</div>
+</body>
+</html>
