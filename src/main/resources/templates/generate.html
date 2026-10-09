@@ -17,6 +17,31 @@
         </div>
     </div>
 
+    <!-- Restored Historical Version Notification Banner -->
+    <div th:if="${restoredVersion != null}" class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-amber-500/5">
+        <div class="flex items-center gap-3 text-amber-300">
+            <div class="p-2 rounded-xl bg-amber-500/20 border border-amber-500/40 shrink-0">
+                <i data-lucide="history" class="w-5 h-5 text-amber-400"></i>
+            </div>
+            <div>
+                <div class="font-mono font-bold text-xs flex items-center gap-2">
+                    <span>Loaded Historical Revision</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                          th:text="'Version ' + ${restoredVersion.versionNumber}">Version 1</span>
+                    <span th:if="${restoredClassName != null}" class="text-white" th:text="'— ' + ${restoredClassName} + '.java'">— Calculator.java</span>
+                </div>
+                <div class="text-[11px] font-mono text-slate-400 mt-0.5">
+                    Recorded: <span th:text="${#temporals.format(restoredVersion.timestamp, 'yyyy-MM-dd HH:mm:ss')}">timestamp</span> &bull; SHA-256: <span th:text="${restoredVersion.sourceHash != null and restoredVersion.sourceHash.length() > 12 ? restoredVersion.sourceHash.substring(0, 12) + '...' : restoredVersion.sourceHash}">hash</span>. Source code pre-filled below for inspection or re-synthesis.
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+            <a href="/generate" class="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-300 hover:text-white font-mono text-xs transition border border-dark-700 flex items-center gap-1.5">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Clear &amp; New
+            </a>
+        </div>
+    </div>
+
     <!-- Generator & Studio Form -->
     <form action="/generate" method="post" enctype="multipart/form-data" class="space-y-6" id="studioForm">
 

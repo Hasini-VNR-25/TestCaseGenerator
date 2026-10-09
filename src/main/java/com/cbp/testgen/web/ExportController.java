@@ -1,12 +1,15 @@
 package com.cbp.testgen.web;
 
 import com.cbp.testgen.database.entity.ClassMetadataEntity;
+import com.cbp.testgen.database.entity.ClassVersionEntity;
 import com.cbp.testgen.database.entity.TestCaseEntity;
 import com.cbp.testgen.database.repository.ClassMetadataRepository;
+import com.cbp.testgen.database.repository.ClassVersionRepository;
 import com.cbp.testgen.database.repository.TestCaseRepository;
 import com.cbp.testgen.report.HtmlReportGenerator;
 import com.cbp.testgen.service.CodeRectifierService;
 import com.cbp.testgen.service.PipelineService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,17 +28,30 @@ public class ExportController {
     private final PipelineService pipelineService;
     private final HtmlReportGenerator htmlReportGenerator;
     private final CodeRectifierService codeRectifierService;
+    private final ClassVersionRepository classVersionRepository;
+
+    @Autowired
+    public ExportController(ClassMetadataRepository classMetadataRepository,
+                            TestCaseRepository testCaseRepository,
+                            PipelineService pipelineService,
+                            HtmlReportGenerator htmlReportGenerator,
+                            CodeRectifierService codeRectifierService,
+                            ClassVersionRepository classVersionRepository) {
+        this.classMetadataRepository = classMetadataRepository;
+        this.testCaseRepository = testCaseRepository;
+        this.pipelineService = pipelineService;
+        this.htmlReportGenerator = htmlReportGenerator;
+        this.codeRectifierService = codeRectifierService;
+        this.classVersionRepository = classVersionRepository;
+    }
 
     public ExportController(ClassMetadataRepository classMetadataRepository,
                             TestCaseRepository testCaseRepository,
                             PipelineService pipelineService,
                             HtmlReportGenerator htmlReportGenerator,
                             CodeRectifierService codeRectifierService) {
-        this.classMetadataRepository = classMetadataRepository;
-        this.testCaseRepository = testCaseRepository;
-        this.pipelineService = pipelineService;
-        this.htmlReportGenerator = htmlReportGenerator;
-        this.codeRectifierService = codeRectifierService;
+        this(classMetadataRepository, testCaseRepository, pipelineService,
+             htmlReportGenerator, codeRectifierService, null);
     }
 
     @GetMapping("/export/java/{classId}")
@@ -99,6 +115,24 @@ public class ExportController {
         CodeRectifierService.RectificationResult result = codeRectifierService.rectifyAndVerify(classId);
         byte[] bytes = result.getRectifiedSourceCode().getBytes(StandardCharsets.UTF_8);
         String filename = "Rectified_" + result.getClassName() + ".java";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(bytes);
+    }
+
+    @GetMapping("/export/version/{versionId}")
+    public ResponseEntity<byte[]> exportVersionSourceCode(@PathVariable("versionId") Long versionId) {
+        if (classVersionRepository == null) {
+            return ResponseEntity.notFound().build();
+        }
+        ClassVersionEntity version = classVersionRepository.findById(versionId)
+                .orElseThrow(() -> new IllegalArgumentException("Version not found: " + versionId));
+        String code = version.getSourceCode() != null ? version.getSourceCode() : "";
+        byte[] bytes = code.getBytes(StandardCharsets.UTF_8);
+        String className = version.getClassMetadata() != null ? version.getClassMetadata().getClassName() : "SourceCode";
+        String filename = className + "_v" + version.getVersionNumber() + ".java";
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")

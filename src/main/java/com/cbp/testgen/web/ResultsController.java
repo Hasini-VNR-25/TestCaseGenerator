@@ -1,15 +1,17 @@
 package com.cbp.testgen.web;
 
-import com.cbp.testgen.analyzer.AstDiffAnalyzer;
 import com.cbp.testgen.database.entity.*;
 import com.cbp.testgen.database.repository.*;
 import com.cbp.testgen.mutation.Mutant;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -19,6 +21,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+
+import com.cbp.testgen.analyzer.AstDiffAnalyzer;
 
 @Controller
 public class ResultsController {
@@ -34,6 +38,7 @@ public class ResultsController {
     private final ClassVersionRepository classVersionRepository;
     private final ObjectMapper objectMapper;
 
+    @Autowired
     public ResultsController(ClassMetadataRepository classMetadataRepository,
                              TestCaseRepository testCaseRepository,
                              CoverageResultRepository coverageResultRepository,
@@ -50,6 +55,16 @@ public class ResultsController {
         this.classVersionRepository = classVersionRepository;
         this.objectMapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
+    public ResultsController(ClassMetadataRepository classMetadataRepository,
+                             TestCaseRepository testCaseRepository,
+                             CoverageResultRepository coverageResultRepository,
+                             MutationResultRepository mutationResultRepository,
+                             FlakyTestRepository flakyTestRepository,
+                             TestResultRepository testResultRepository) {
+        this(classMetadataRepository, testCaseRepository, coverageResultRepository,
+             mutationResultRepository, flakyTestRepository, testResultRepository, null);
     }
 
     public static class TestCaseRowDto {
@@ -69,13 +84,26 @@ public class ResultsController {
         private final int subFunctionLine;
         private final String callerFunctionName;
         private final String failureExceptionType;
-        private final boolean modifiedMethod;
+
+        private final boolean regressionPriority;
 
         public TestCaseRowDto(Long id, String functionName, String testName, String testType,
                               String inputValues, int assertionCount, String status,
                               String vulnerability, String solution, String generatedCode, String errorMessage,
                               boolean hasSubFunctionFailure, String subFunctionName, int subFunctionLine,
-                              String callerFunctionName, String failureExceptionType, boolean modifiedMethod) {
+                              String callerFunctionName, String failureExceptionType) {
+            this(id, functionName, testName, testType, inputValues, assertionCount, status,
+                 vulnerability, solution, generatedCode, errorMessage,
+                 hasSubFunctionFailure, subFunctionName, subFunctionLine,
+                 callerFunctionName, failureExceptionType, false);
+        }
+
+        public TestCaseRowDto(Long id, String functionName, String testName, String testType,
+                              String inputValues, int assertionCount, String status,
+                              String vulnerability, String solution, String generatedCode, String errorMessage,
+                              boolean hasSubFunctionFailure, String subFunctionName, int subFunctionLine,
+                              String callerFunctionName, String failureExceptionType,
+                              boolean regressionPriority) {
             this.id = id;
             this.functionName = functionName;
             this.testName = testName;
@@ -92,7 +120,7 @@ public class ResultsController {
             this.subFunctionLine = subFunctionLine;
             this.callerFunctionName = callerFunctionName;
             this.failureExceptionType = failureExceptionType;
-            this.modifiedMethod = modifiedMethod;
+            this.regressionPriority = regressionPriority;
         }
 
         public Long getId() { return id; }
@@ -111,7 +139,7 @@ public class ResultsController {
         public int getSubFunctionLine() { return subFunctionLine; }
         public String getCallerFunctionName() { return callerFunctionName; }
         public String getFailureExceptionType() { return failureExceptionType; }
-        public boolean isModifiedMethod() { return modifiedMethod; }
+        public boolean isRegressionPriority() { return regressionPriority; }
     }
 
     @GetMapping("/results/{classId}")
@@ -146,33 +174,31 @@ public class ResultsController {
             }
         }
 
-        List<ClassVersionEntity> versions = classVersionRepository.findByClassMetadataIdOrderByVersionNumberDesc(classId);
+        List<ClassVersionEntity> versions = classVersionRepository != null
+                ? classVersionRepository.findByClassMetadataIdOrderByVersionNumberDesc(classId)
+                : Collections.emptyList();
+
         ClassVersionEntity latestVersion = !versions.isEmpty() ? versions.get(0) : null;
         ClassVersionEntity previousVersion = versions.size() > 1 ? versions.get(1) : null;
 
         List<AstDiffAnalyzer.MethodDiff> methodDiffs = new ArrayList<>();
-        Set<String> modifiedMethodNames = new HashSet<>();
+        Set<String> modifiedMethods = new HashSet<>();
         if (latestVersion != null && latestVersion.getChangedMethodsJson() != null && !latestVersion.getChangedMethodsJson().isEmpty()) {
             try {
-                List<AstDiffAnalyzer.MethodDiff> parsed = objectMapper.readValue(
+                methodDiffs = objectMapper.readValue(
                         latestVersion.getChangedMethodsJson(),
                         new TypeReference<List<AstDiffAnalyzer.MethodDiff>>() {}
                 );
-                if (parsed != null) {
-                    methodDiffs.addAll(parsed);
-                    for (AstDiffAnalyzer.MethodDiff md : parsed) {
-                        if (md.getChangeType() == AstDiffAnalyzer.MethodDiff.ChangeType.MODIFIED ||
-                            md.getChangeType() == AstDiffAnalyzer.MethodDiff.ChangeType.ADDED) {
-                            modifiedMethodNames.add(md.getMethodName());
-                        }
+                for (AstDiffAnalyzer.MethodDiff md : methodDiffs) {
+                    if (md.getChangeType() == AstDiffAnalyzer.MethodDiff.ChangeType.MODIFIED
+                            || md.getChangeType() == AstDiffAnalyzer.MethodDiff.ChangeType.ADDED) {
+                        modifiedMethods.add(md.getMethodName());
                     }
                 }
             } catch (Exception e) {
-                logger.warn("Could not parse method diffs: {}", e.getMessage());
+                logger.warn("Could not deserialize changed methods JSON: {}", e.getMessage());
             }
         }
-
-        boolean hasVersionDiff = previousVersion != null && !modifiedMethodNames.isEmpty();
 
         List<TestCaseRowDto> tableRows = new ArrayList<>();
         int passedCount = 0;
@@ -213,6 +239,8 @@ public class ResultsController {
             // 4. Vulnerability & Recommended Solution Analysis
             VulnerabilityAssessment va = assessVulnerabilityAndSolution(tc, status, errorMessage, stackTrace, inputValues, functionName);
 
+            boolean isRegressionPriority = modifiedMethods.contains(functionName);
+
             tableRows.add(new TestCaseRowDto(
                     tc.getId(),
                     functionName,
@@ -230,7 +258,7 @@ public class ResultsController {
                     va.subFunctionLine,
                     va.callerFunction,
                     va.exceptionType,
-                    modifiedMethodNames.contains(functionName)
+                    isRegressionPriority
             ));
         }
 
@@ -247,14 +275,38 @@ public class ResultsController {
         model.addAttribute("totalTests", testCases.size());
         model.addAttribute("passedCount", passedCount);
         model.addAttribute("failedCount", failedCount);
+
+        // Versioning and AST Diff Telemetry
         model.addAttribute("versions", versions);
         model.addAttribute("latestVersion", latestVersion);
         model.addAttribute("previousVersion", previousVersion);
         model.addAttribute("methodDiffs", methodDiffs);
-        model.addAttribute("hasVersionDiff", hasVersionDiff);
-        model.addAttribute("modifiedMethodNames", modifiedMethodNames);
+        model.addAttribute("modifiedMethods", modifiedMethods);
+        model.addAttribute("hasVersions", versions.size() > 1);
+        model.addAttribute("previousSourceCode", previousVersion != null ? previousVersion.getSourceCode() : null);
 
         return "results";
+    }
+
+    @GetMapping("/api/versions/{versionId}/code")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getVersionCode(@PathVariable("versionId") Long versionId) {
+        if (classVersionRepository == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return classVersionRepository.findById(versionId)
+                .map(v -> {
+                    Map<String, Object> resp = new HashMap<>();
+                    resp.put("id", v.getId());
+                    resp.put("versionNumber", v.getVersionNumber());
+                    resp.put("className", v.getClassMetadata() != null ? v.getClassMetadata().getClassName() : "Unknown");
+                    resp.put("sourceHash", v.getSourceHash());
+                    resp.put("timestamp", v.getTimestamp() != null ? v.getTimestamp().toString() : "");
+                    resp.put("sourceCode", v.getSourceCode() != null ? v.getSourceCode() : "");
+                    resp.put("changedMethodsJson", v.getChangedMethodsJson() != null ? v.getChangedMethodsJson() : "{}");
+                    return ResponseEntity.ok(resp);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     static class VulnerabilityAssessment {

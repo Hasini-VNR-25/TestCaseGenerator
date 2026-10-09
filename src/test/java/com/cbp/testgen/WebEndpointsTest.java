@@ -1,5 +1,11 @@
 package com.cbp.testgen;
 
+import com.cbp.testgen.database.entity.ClassMetadataEntity;
+import com.cbp.testgen.database.entity.ClassVersionEntity;
+import com.cbp.testgen.database.entity.ProjectEntity;
+import com.cbp.testgen.database.repository.ClassMetadataRepository;
+import com.cbp.testgen.database.repository.ClassVersionRepository;
+import com.cbp.testgen.database.repository.ProjectRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -15,6 +21,34 @@ public class WebEndpointsTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ClassMetadataRepository classMetadataRepository;
+
+    @Autowired
+    private ClassVersionRepository classVersionRepository;
+
+    @Autowired
+    private ProjectRepository projectRepository;
+
+    @Test
+    void testVersionExportAndApiEndpoints() throws Exception {
+        ProjectEntity project = projectRepository.save(new ProjectEntity("TestProj", "/test/path"));
+        ClassMetadataEntity meta = new ClassMetadataEntity(project, "Calculator", "samples", "abc1234567890", null, null, "public class Calculator {}");
+        meta = classMetadataRepository.save(meta);
+
+        ClassVersionEntity v1 = new ClassVersionEntity(meta, 1, "abc1234567890", "{}", "public class Calculator { int add(int a, int b) { return a + b; } }");
+        v1 = classVersionRepository.save(v1);
+
+        mockMvc.perform(get("/api/versions/" + v1.getId() + "/code"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/export/version/" + v1.getId()))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/generate").param("versionId", String.valueOf(v1.getId())))
+                .andExpect(status().isOk());
+    }
 
     @Test
     void testDashboardEndpoint() throws Exception {

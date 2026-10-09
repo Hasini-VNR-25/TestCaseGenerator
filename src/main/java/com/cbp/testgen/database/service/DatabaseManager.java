@@ -224,13 +224,8 @@ public class DatabaseManager {
     }
 
     @Transactional(readOnly = true)
-    public Optional<ClassMetadataEntity> findExistingClass(Long projectId, String className) {
+    public Optional<ClassMetadataEntity> findClassMetadata(Long projectId, String className) {
         return classMetadataRepository.findByProjectIdAndClassName(projectId, className);
-    }
-
-    @Transactional
-    public ClassVersionEntity recordClassVersion(ClassMetadataEntity classEntity, String changedMethodsJson) {
-        return recordClassVersion(classEntity, changedMethodsJson, classEntity.getSourceCode());
     }
 
     @Transactional
@@ -245,6 +240,11 @@ public class DatabaseManager {
                 sourceCode
         );
         return classVersionRepository.save(cve);
+    }
+
+    @Transactional
+    public ClassVersionEntity recordClassVersion(ClassMetadataEntity classEntity, String changedMethodsJson) {
+        return recordClassVersion(classEntity, changedMethodsJson, classEntity.getSourceCode());
     }
 
     @Transactional(readOnly = true)

@@ -87,6 +87,10 @@
                         <td class="p-3 font-mono font-bold text-white flex items-center gap-2">
                             <i data-lucide="file-code" class="w-3.5 h-3.5 text-cyan-400"></i>
                             <span th:text="${cls.className}">ClassName</span>
+                            <span th:if="${versionCounts != null and versionCounts.get(cls.id) != null and versionCounts.get(cls.id) > 1}"
+                                  class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-semibold"
+                                  th:title="${versionCounts.get(cls.id)} + ' revisions recorded'"
+                                  th:text="'v' + ${versionCounts.get(cls.id)}">v2</span>
                         </td>
                         <td class="p-3 font-mono text-slate-300" th:text="${cls.packageName}">package</td>
                         <td class="p-3 font-mono text-slate-400">

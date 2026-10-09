@@ -12,6 +12,12 @@
                 <span class="text-xs font-mono text-slate-400" th:text="${classEntity.packageName}">package</span>
                 <span class="text-slate-600">&bull;</span>
                 <span class="text-xs font-mono text-slate-500" th:text="'SHA: ' + ${classEntity.sourceHash.substring(0, 10)} + '...'">SHA: hash</span>
+                <span class="text-slate-600" th:if="${versions != null and versions.size() > 1}">&bull;</span>
+                <button type="button" th:if="${versions != null and versions.size() > 1}" onclick="switchTab('tab-versions')"
+                        class="text-xs font-mono text-amber-400 hover:text-amber-300 hover:underline flex items-center gap-1 font-semibold">
+                    <i data-lucide="git-branch" class="w-3 h-3 text-amber-400"></i>
+                    <span th:text="${versions.size()} + ' Revisions Recorded'">2 Revisions</span>
+                </button>
             </div>
             <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
                 <i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-400"></i>
@@ -19,6 +25,13 @@
             </h1>
         </div>
         <div class="flex flex-wrap gap-2.5">
+            <button type="button" onclick="switchTab('tab-versions')"
+                    class="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-semibold text-xs transition inline-flex items-center gap-2 border border-amber-500/30 whitespace-nowrap">
+                <i data-lucide="history" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                <span>Version History</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                      th:text="'(' + (${versions != null ? versions.size() : 1}) + ')'">(1)</span>
+            </button>
             <a th:href="@{'/export/java/' + ${classEntity.id}}" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold text-xs transition flex items-center gap-2 shadow-lg shadow-cyan-600/20">
                 <i data-lucide="download" class="w-4 h-4"></i> Download JUnit 5 (.java)
             </a>
@@ -80,28 +93,50 @@
     </div>
 
     <!-- Inspector Navigation Tabs -->
-    <div class="border-b border-dark-800">
-        <nav class="flex space-x-8 text-xs font-mono font-semibold">
+    <div class="border-b border-dark-800 overflow-x-auto no-scrollbar">
+        <nav class="flex items-center space-x-6 text-xs font-mono font-semibold min-w-max pb-px">
+            <!-- 1. Test Suite Matrix -->
             <button onclick="switchTab('tab-tests')" id="btn-tab-tests"
-                    class="py-3 px-1 border-b-2 border-cyan-500 text-cyan-400 font-bold transition flex items-center gap-2">
-                <i data-lucide="table-2" class="w-4 h-4"></i> Test Suite Matrix (<span th:text="${testCaseRows.size()}">0</span>)
+                    class="py-3 px-2 border-b-2 border-cyan-500 text-cyan-400 font-bold transition inline-flex items-center gap-2 whitespace-nowrap shrink-0">
+                <i data-lucide="table-2" class="w-4 h-4 shrink-0"></i>
+                <span>Test Suite Matrix</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[11px] font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20"
+                      th:text="'(' + ${testCaseRows.size()} + ')'">(0)</span>
             </button>
-            <button onclick="switchTab('tab-diff')" id="btn-tab-diff"
-                    class="py-3 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition flex items-center gap-2">
-                <i data-lucide="git-commit" class="w-4 h-4 text-amber-400"></i> Code Diffs &amp; Version History
-                <span th:if="${hasVersionDiff}" class="px-1.5 py-0.5 rounded-full text-[9px] bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">MODIFIED</span>
+
+            <!-- 2. Version Diff & Regression -->
+            <button onclick="switchTab('tab-versions')" id="btn-tab-versions"
+                    class="py-3 px-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition inline-flex items-center gap-2 whitespace-nowrap shrink-0">
+                <i data-lucide="git-branch" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                <span>Version Diff &amp; Regression</span>
+                <span th:if="${latestVersion != null and latestVersion.versionNumber > 1}"
+                      class="px-1.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                      th:text="'(v' + ${latestVersion.versionNumber} + ')'">(v2)</span>
+                <span th:if="${latestVersion == null or latestVersion.versionNumber <= 1}"
+                      class="px-1.5 py-0.5 rounded-md text-[11px] font-medium bg-dark-800 text-slate-500 border border-dark-700">(v1)</span>
             </button>
+
+            <!-- 3. Mutation Matrix -->
             <button onclick="switchTab('tab-mutation')" id="btn-tab-mutation"
-                    class="py-3 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition flex items-center gap-2">
-                <i data-lucide="target" class="w-4 h-4"></i> Mutation Matrix (<span th:text="${mutants.size()}">0</span>)
+                    class="py-3 px-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition inline-flex items-center gap-2 whitespace-nowrap shrink-0">
+                <i data-lucide="target" class="w-4 h-4 shrink-0"></i>
+                <span>Mutation Matrix</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[11px] font-bold bg-dark-800 text-slate-300 border border-dark-700"
+                      th:text="'(' + ${mutants.size()} + ')'">(0)</span>
             </button>
+
+            <!-- 4. Self-Healing Code (Auto-Rectify) -->
             <button onclick="switchTab('tab-ai')" id="btn-tab-ai"
-                    class="py-3 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition flex items-center gap-2">
-                <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i> Self-Healing Code (Auto-Rectify)
+                    class="py-3 px-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition inline-flex items-center gap-2 whitespace-nowrap shrink-0">
+                <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                <span>Self-Healing Code (Auto-Rectify)</span>
             </button>
+
+            <!-- 5. Source AST -->
             <button onclick="switchTab('tab-source')" id="btn-tab-source"
-                    class="py-3 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition flex items-center gap-2">
-                <i data-lucide="code" class="w-4 h-4"></i> Source AST
+                    class="py-3 px-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition inline-flex items-center gap-2 whitespace-nowrap shrink-0">
+                <i data-lucide="code" class="w-4 h-4 shrink-0"></i>
+                <span>Source AST</span>
             </button>
         </nav>
     </div>
@@ -156,15 +191,16 @@
                         
                         <!-- 1. Function Name & Test ID -->
                         <td class="p-3.5 align-top">
-                            <div class="font-bold text-white text-xs flex items-center gap-1.5 flex-wrap">
+                            <div class="font-bold text-white text-xs flex items-center gap-1.5">
                                 <span class="text-cyan-400" th:text="${row.functionName}">function</span>
                                 <span class="text-slate-500">()</span>
-                                <span th:if="${row.isModifiedMethod()}" class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 text-[9px] inline-flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span> MODIFIED (PRIORITY #1)
+                            </div>
+                            <div class="flex flex-wrap items-center gap-1 mt-1">
+                                <span class="text-[9px] px-1.5 py-0.5 rounded bg-dark-800 text-slate-400 border border-dark-700" th:text="${row.testType}">BOUNDARY</span>
+                                <span th:if="${row.regressionPriority}" class="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                    <i data-lucide="zap" class="w-2.5 h-2.5 text-amber-400"></i> HIGH PRIORITY (MODIFIED)
                                 </span>
                             </div>
-                            <div class="text-[11px] text-slate-400 truncate max-w-xs mt-0.5" th:text="${row.testName}">testName</div>
-                            <span class="inline-block mt-1 text-[9px] px-1.5 py-0.5 rounded bg-dark-800 text-slate-400 border border-dark-700" th:text="${row.testType}">BOUNDARY</span>
                         </td>
 
                         <!-- 2. Input Values -->
@@ -361,154 +397,121 @@
 
     <!-- TAB 4: Source AST -->
     <div id="tab-source" class="tab-content hidden space-y-4">
-        <div class="p-4 rounded-2xl bg-dark-950 border border-dark-800 overflow-x-auto">
-            <pre class="text-emerald-400 font-mono text-xs leading-relaxed" th:text="${classEntity.sourceCode}">source</pre>
+        <div class="p-4 rounded-2xl bg-dark-900 border border-dark-800 flex flex-wrap items-center justify-between gap-3 shadow-md">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    <i data-lucide="code" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <span class="font-mono text-xs font-bold text-white">Source Code Inspector</span>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 ml-2"
+                          th:text="'Active: Version ' + (${latestVersion != null ? latestVersion.versionNumber : 1})">Version 1</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-mono text-slate-400">View Revision:</span>
+                <select onchange="switchSourceTabView(this.value)"
+                        class="px-2.5 py-1 rounded-lg bg-dark-950 border border-dark-800 text-slate-300 text-xs font-mono focus:outline-none focus:border-cyan-500">
+                    <option th:each="v : ${versions}"
+                            th:value="${v.id}"
+                            th:selected="${latestVersion != null and v.versionNumber == latestVersion.versionNumber}"
+                            th:text="'Revision v' + ${v.versionNumber} + ' (' + ${#temporals.format(v.timestamp, 'MM-dd HH:mm')} + ')'">v1</option>
+                </select>
+                <button type="button" onclick="copySourceTabCode()" class="px-3 py-1 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-200 font-mono text-xs transition flex items-center gap-1.5 border border-dark-700">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Code
+                </button>
+            </div>
+        </div>
+        <div class="p-4 rounded-2xl bg-dark-950 border border-dark-800 overflow-x-auto shadow-xl">
+            <pre id="sourceTabCodeBox" class="text-emerald-400 font-mono text-xs leading-relaxed whitespace-pre" th:text="${classEntity.sourceCode}">source</pre>
         </div>
     </div>
 
-    <!-- TAB 5: Code Diffs & Version History -->
-    <div id="tab-diff" class="tab-content hidden space-y-6">
+    <!-- TAB 5: Version Diff & Regression Studio -->
+    <div id="tab-versions" class="tab-content hidden space-y-6">
         
-        <!-- Comparison Header Banner -->
-        <div class="p-6 rounded-2xl bg-dark-900 border border-dark-800 space-y-4">
+        <!-- Version Status & Summary Banner -->
+        <div class="p-6 rounded-2xl bg-dark-900 border border-dark-800 shadow-xl space-y-3">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <div class="flex items-center gap-2 mb-1">
-                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">AST DIFF &amp; REGRESSION TRACKER</span>
-                        <span class="text-xs font-mono text-slate-400" th:text="${'Total Versions: ' + (versions != null ? versions.size() : 1)}">Versions: 1</span>
+                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">AST REGRESSION &amp; DIFF ENGINE</span>
+                        <span class="text-xs font-mono text-slate-400" th:if="${latestVersion != null}" th:text="'Active: Version ' + ${latestVersion.versionNumber}">Active Version</span>
                     </div>
                     <h3 class="font-bold text-white text-base font-mono flex items-center gap-2">
                         <i data-lucide="git-commit" class="w-5 h-5 text-amber-400"></i>
-                        Code Evolution &amp; Method Diff Inspection
+                        Code Evolution, AST Diffs &amp; Prioritized Regression Matrix
                     </h3>
-                    <p class="text-xs text-slate-400 mt-1 max-w-2xl font-mono">
-                        Compares current AST structure against historical baseline revisions, identifies altered methods, and automatically prioritizes regression test suites.
+                    <p class="text-xs text-slate-400 mt-1 max-w-3xl">
+                        Tracks code modifications between revisions, calculates AST differences down to method-body logic, and ranks regression test cases so touched code is tested first.
                     </p>
                 </div>
-                
-                <div th:if="${hasVersionDiff}" class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold flex items-center gap-2">
-                    <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400"></i>
-                    <span>Changes Detected in Active Version</span>
+                <div class="flex items-center gap-2">
+                    <span th:if="${hasVersions}" class="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/30 font-mono text-xs font-bold flex items-center gap-1.5">
+                        <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400"></i>
+                        <span th:text="${modifiedMethods.size()} + ' Method(s) Modified'">1 Method Modified</span>
+                    </span>
+                    <span th:unless="${hasVersions}" class="px-3 py-1.5 rounded-xl bg-dark-950 text-slate-400 border border-dark-800 font-mono text-xs font-medium">
+                        Initial Version (v1)
+                    </span>
                 </div>
-            </div>
-
-            <!-- Notice when only 1 version exists -->
-            <div th:if="${!hasVersionDiff and (versions == null or versions.size() <= 1)}" class="p-4 rounded-xl bg-dark-950 border border-dark-800 text-slate-400 text-xs font-mono flex items-center gap-3">
-                <i data-lucide="info" class="w-4 h-4 text-cyan-400 shrink-0"></i>
-                <span>This is <strong>Version 1.0 (Initial Baseline)</strong>. When you re-synthesize this class with modified methods under the same project, TESTGEN will automatically generate an AST-diff report, highlight altered methods, and display previous vs current code side-by-side here.</span>
             </div>
         </div>
 
-        <!-- Method Diffs Table -->
-        <div class="p-6 rounded-2xl bg-dark-900 border border-dark-800 space-y-4">
-            <h4 class="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <i data-lucide="list-checks" class="w-4 h-4 text-cyan-400"></i> Method Level Diff Analysis
-            </h4>
+        <!-- AST Method Diffs Table -->
+        <div class="p-6 rounded-2xl bg-dark-900 border border-dark-800 shadow-xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h4 class="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="file-diff" class="w-4 h-4 text-cyan-400"></i>
+                    Method-Level AST Modification Analysis
+                </h4>
+                <span class="text-[10px] font-mono text-slate-400" th:text="${methodDiffs.size() + ' methods analyzed'}">0 methods</span>
+            </div>
+
             <div class="overflow-x-auto rounded-xl border border-dark-800 bg-dark-950">
                 <table class="w-full text-left text-xs font-mono">
                     <thead class="bg-dark-950 text-slate-400 uppercase text-[11px] font-bold border-b border-dark-800">
                         <tr>
-                            <th class="p-3.5">Method</th>
-                            <th class="p-3.5">Signature</th>
-                            <th class="p-3.5 text-center">Change Type</th>
-                            <th class="p-3.5">Analysis Details</th>
+                            <th class="p-3">Method Name</th>
+                            <th class="p-3">Signature</th>
+                            <th class="p-3 text-center">Change Classification</th>
+                            <th class="p-3">AST Diff Diagnostics</th>
+                            <th class="p-3 text-center">Regression Impact</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-dark-800/60 bg-dark-900/40">
-                        <tr th:each="d : ${methodDiffs}" class="hover:bg-dark-850/60 transition">
-                            <td class="p-3.5 font-bold text-white flex items-center gap-1.5">
-                                <span class="text-cyan-400" th:text="${d.methodName}">method</span>
-                                <span class="text-slate-500">()</span>
+                    <tbody class="divide-y divide-dark-800/60 bg-dark-900/60">
+                        <tr th:each="md : ${methodDiffs}" class="hover:bg-dark-850/60 transition">
+                            <td class="p-3 font-bold text-white">
+                                <span class="text-cyan-300" th:text="${md.methodName}">add</span>()
                             </td>
-                            <td class="p-3.5 text-slate-300 font-mono text-[11px]" th:text="${d.signature}">int add(int, int)</td>
-                            <td class="p-3.5 text-center">
-                                <span th:if="${d.changeType.name() == 'MODIFIED'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 inline-flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span> MODIFIED
+                            <td class="p-3 text-slate-400 font-mono text-[11px] truncate max-w-xs" th:text="${md.signature}">int add(int, int)</td>
+                            <td class="p-3 text-center">
+                                <span th:if="${md.changeType.name() == 'MODIFIED'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 inline-flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> MODIFIED
                                 </span>
-                                <span th:if="${d.changeType.name() == 'ADDED'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1">
+                                <span th:if="${md.changeType.name() == 'ADDED'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ADDED
                                 </span>
-                                <span th:if="${d.changeType.name() == 'DELETED'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40 inline-flex items-center gap-1">
+                                <span th:if="${md.changeType.name() == 'DELETED'}" class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40 inline-flex items-center gap-1">
                                     <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> DELETED
                                 </span>
-                                <span th:if="${d.changeType.name() == 'UNCHANGED'}" class="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase bg-dark-800 text-slate-400 border border-dark-700">
+                                <span th:if="${md.changeType.name() == 'UNCHANGED'}" class="px-2 py-0.5 rounded text-[10px] font-medium bg-dark-800 text-slate-400">
                                     UNCHANGED
                                 </span>
                             </td>
-                            <td class="p-3.5 text-slate-300 text-[11px]" th:text="${d.details}">No changes</td>
-                        </tr>
-                        <tr th:if="${methodDiffs == null or methodDiffs.isEmpty()}">
-                            <td colspan="4" class="p-4 text-center text-slate-500 font-mono">No method diffs recorded for this release.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Side-by-Side Source Code Comparison -->
-        <div class="p-6 rounded-2xl bg-dark-900 border border-dark-800 space-y-4">
-            <div class="flex items-center justify-between">
-                <h4 class="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <i data-lucide="columns" class="w-4 h-4 text-cyan-400"></i> Side-by-Side Code Comparison (Previous vs Active)
-                </h4>
-                <div class="text-[11px] font-mono text-slate-400 flex items-center gap-3">
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-500"></span> Previous Copy</span>
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Active (Modified)</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <!-- Left: Previous Copy -->
-                <div class="space-y-1.5">
-                    <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 px-1">
-                        <span>PREVIOUS VERSION CODE</span>
-                        <span th:if="${previousVersion != null}" th:text="${'v' + previousVersion.versionNumber}">v1</span>
-                    </div>
-                    <div class="p-4 rounded-xl bg-dark-950 border border-dark-800 overflow-x-auto max-h-[480px]">
-                        <pre class="text-slate-400 font-mono text-xs leading-relaxed" th:text="${previousVersion != null and previousVersion.sourceCode != null ? previousVersion.sourceCode : '// No previous code revision found in database for comparison.'}"></pre>
-                    </div>
-                </div>
-
-                <!-- Right: Active Current Copy -->
-                <div class="space-y-1.5">
-                    <div class="flex items-center justify-between text-[11px] font-mono text-emerald-400 px-1 font-bold">
-                        <span>ACTIVE VERSION CODE (MODIFIED)</span>
-                        <span th:if="${latestVersion != null}" th:text="${'v' + latestVersion.versionNumber}">v2</span>
-                    </div>
-                    <div class="p-4 rounded-xl bg-dark-950 border border-emerald-500/30 overflow-x-auto max-h-[480px]">
-                        <pre class="text-emerald-400 font-mono text-xs leading-relaxed" th:text="${classEntity.sourceCode}"></pre>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Historical Version Sessions Table -->
-        <div class="p-6 rounded-2xl bg-dark-900 border border-dark-800 space-y-4">
-            <h4 class="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <i data-lucide="history" class="w-4 h-4 text-cyan-400"></i> Version Registry Log (Database 3NF)
-            </h4>
-            <div class="overflow-x-auto rounded-xl border border-dark-800 bg-dark-950">
-                <table class="w-full text-left text-xs font-mono">
-                    <thead class="bg-dark-950 text-slate-400 uppercase text-[11px] font-bold border-b border-dark-800">
-                        <tr>
-                            <th class="p-3">Version</th>
-                            <th class="p-3">Timestamp</th>
-                            <th class="p-3">SHA-256 Digest</th>
-                            <th class="p-3">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-dark-800/60 bg-dark-900/40">
-                        <tr th:each="v, iter : ${versions}" class="hover:bg-dark-850/60 transition">
-                            <td class="p-3 font-bold text-cyan-400" th:text="${'v' + v.versionNumber}">v1</td>
-                            <td class="p-3 text-slate-300" th:text="${v.timestamp}">timestamp</td>
-                            <td class="p-3 text-slate-400 font-mono text-[11px]" th:text="${v.sourceHash.length() > 16 ? v.sourceHash.substring(0, 16) + '...' : v.sourceHash}">hash</td>
-                            <td class="p-3">
-                                <span th:if="${iter.index == 0}" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                                    CURRENT ACTIVE
+                            <td class="p-3 text-slate-300 text-[11px]" th:text="${md.details}">Method body logic altered</td>
+                            <td class="p-3 text-center">
+                                <span th:if="${md.changeType.name() == 'MODIFIED' or md.changeType.name() == 'ADDED'}" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                                    ⚡ High Priority (+100 Score)
                                 </span>
-                                <span th:if="${iter.index > 0}" class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-dark-800 text-slate-400">
-                                    HISTORICAL
+                                <span th:unless="${md.changeType.name() == 'MODIFIED' or md.changeType.name() == 'ADDED'}" class="text-slate-500 text-[10px]">
+                                    Nominal Run
                                 </span>
+                            </td>
+                        </tr>
+                        <tr th:if="${methodDiffs.isEmpty()}">
+                            <td colspan="5" class="p-6 text-center text-slate-500">
+                                No modifications detected. Current source code matches the recorded baseline.
                             </td>
                         </tr>
                     </tbody>
@@ -516,6 +519,148 @@
             </div>
         </div>
 
+        <!-- Previous Code Copy vs Current Code Copy Inspector -->
+        <div class="p-6 rounded-2xl bg-dark-900 border border-dark-800 shadow-xl space-y-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                    <h4 class="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="split" class="w-4 h-4 text-emerald-400"></i>
+                        Source Code Revision Comparator (Previous vs. Current)
+                    </h4>
+                    <p class="text-[11px] text-slate-400 mt-0.5 font-mono">
+                        Inspect exact source code side-by-side to review changes made across test generation runs.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Side-by-Side Code Viewer -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                
+                <!-- Left: Previous Copy -->
+                <div class="rounded-xl border border-dark-800 bg-dark-950 overflow-hidden">
+                    <div class="p-3 bg-dark-900 border-b border-dark-800 flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="history" class="w-3.5 h-3.5 text-slate-400"></i>
+                            <span class="text-xs font-mono font-bold text-slate-300">Baseline:</span>
+                            <select id="compareVersionSelect" onchange="switchCompareVersion(this.value)"
+                                    class="px-2 py-0.5 rounded bg-dark-800 border border-dark-700 text-cyan-300 text-xs font-mono focus:outline-none">
+                                <option th:each="v : ${versions}" 
+                                        th:if="${latestVersion == null or v.versionNumber != latestVersion.versionNumber}"
+                                        th:value="${v.id}"
+                                        th:selected="${previousVersion != null and v.id == previousVersion.id}"
+                                        th:text="'Version ' + ${v.versionNumber} + ' (' + ${#temporals.format(v.timestamp, 'MM-dd HH:mm')} + ')'">v1</option>
+                                <option th:if="${versions.size() <= 1}" value="" disabled selected>No prior baseline (v1 is initial)</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="copyPreviousCode()" class="px-2.5 py-1 rounded-md bg-dark-800 hover:bg-dark-700 text-slate-300 font-mono text-[11px] transition flex items-center gap-1">
+                                <i data-lucide="copy" class="w-3 h-3"></i> Copy
+                            </button>
+                            <a id="downloadPreviousBtn"
+                               th:href="${previousVersion != null ? '/export/version/' + previousVersion.id : '#'}"
+                               class="px-2.5 py-1 rounded-md bg-dark-800 hover:bg-dark-700 text-slate-300 font-mono text-[11px] transition flex items-center gap-1"
+                               th:classappend="${previousVersion == null ? 'opacity-50 pointer-events-none' : ''}">
+                                <i data-lucide="download" class="w-3 h-3"></i> Download
+                            </a>
+                        </div>
+                    </div>
+                    <div class="p-4 overflow-x-auto max-h-[450px]">
+                        <pre id="previousCodeBox" class="text-slate-400 font-mono text-xs leading-relaxed whitespace-pre" th:text="${previousSourceCode != null ? previousSourceCode : '// No previous code version stored. This is the initial version (v1).' }">// No previous code</pre>
+                    </div>
+                </div>
+
+                <!-- Right: Current Modified Copy -->
+                <div class="rounded-xl border border-cyan-500/30 bg-dark-950 overflow-hidden shadow-lg shadow-cyan-500/5">
+                    <div class="p-3 bg-dark-900 border-b border-dark-800 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="code-2" class="w-3.5 h-3.5 text-cyan-400"></i>
+                            <span class="text-xs font-mono font-bold text-cyan-300" th:text="${latestVersion != null ? 'Current Modified Code (Version ' + latestVersion.versionNumber + ')' : 'Current Code'}">Current Copy</span>
+                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">LATEST</span>
+                        </div>
+                        <button type="button" onclick="copyCurrentCode()" class="px-2.5 py-1 rounded-md bg-dark-800 hover:bg-dark-700 text-slate-300 font-mono text-[11px] transition flex items-center gap-1">
+                            <i data-lucide="copy" class="w-3 h-3"></i> Copy
+                        </button>
+                    </div>
+                    <div class="p-4 overflow-x-auto max-h-[450px]">
+                        <pre id="currentCodeBox" class="text-emerald-400 font-mono text-xs leading-relaxed whitespace-pre" th:text="${classEntity.sourceCode}">// Current code</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recorded Versions History Table -->
+        <div class="p-6 rounded-2xl bg-dark-900 border border-dark-800 shadow-xl space-y-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                    <h4 class="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="database" class="w-4 h-4 text-indigo-400"></i>
+                        Historical Revisions in Relational Database (3NF)
+                    </h4>
+                    <p class="text-[11px] text-slate-400 mt-0.5 font-mono">
+                        Every execution snapshot is immutably archived. View original code, download .java, or restore into Studio.
+                    </p>
+                </div>
+                <span class="text-[10px] font-mono text-slate-400" th:text="${versions.size() + ' revisions stored'}">0 revisions</span>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-dark-800 bg-dark-950">
+                <table class="w-full text-left text-xs font-mono">
+                    <thead class="bg-dark-950 text-slate-400 uppercase text-[11px] font-bold border-b border-dark-800">
+                        <tr>
+                            <th class="p-3">Revision</th>
+                            <th class="p-3">Timestamp</th>
+                            <th class="p-3">Source SHA-256 Hash</th>
+                            <th class="p-3">Changed Methods Recorded</th>
+                            <th class="p-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-dark-800/60 bg-dark-900/60">
+                        <tr th:each="v : ${versions}" class="hover:bg-dark-850/60 transition">
+                            <td class="p-3 font-bold text-white whitespace-nowrap">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-dark-800 text-cyan-300 border border-dark-700" th:text="'v' + ${v.versionNumber}">v1</span>
+                                <span th:if="${latestVersion != null and v.versionNumber == latestVersion.versionNumber}"
+                                      class="ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">CURRENT</span>
+                                <span th:if="${v.versionNumber == 1}"
+                                      class="ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-800 text-slate-400 border border-slate-700">BASELINE</span>
+                            </td>
+                            <td class="p-3 text-slate-400 whitespace-nowrap" th:text="${#temporals.format(v.timestamp, 'yyyy-MM-dd HH:mm:ss')}">date</td>
+                            <td class="p-3 text-slate-300 font-mono text-[11px]" th:text="${v.sourceHash.length() > 12 ? v.sourceHash.substring(0, 12) + '...' : v.sourceHash}">hash</td>
+                            <td class="p-3 text-slate-300 text-[11px] truncate max-w-xs" th:text="${v.changedMethodsJson}">{}</td>
+                            <td class="p-3 text-right space-x-1.5 whitespace-nowrap">
+                                <!-- Hidden textarea storing raw code for fast client modal access -->
+                                <textarea th:id="'version-code-' + ${v.id}" class="hidden" th:text="${v.sourceCode}"></textarea>
+
+                                <!-- 1. View Code Button -->
+                                <button type="button"
+                                        th:data-id="${v.id}"
+                                        th:data-version="${v.versionNumber}"
+                                        th:data-hash="${v.sourceHash}"
+                                        th:data-date="${#temporals.format(v.timestamp, 'yyyy-MM-dd HH:mm:ss')}"
+                                        th:data-classname="${classEntity.className}"
+                                        onclick="openVersionModal(this)"
+                                        class="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 font-bold text-[11px] border border-cyan-500/20 transition inline-flex items-center gap-1">
+                                    <i data-lucide="eye" class="w-3 h-3"></i> View Code
+                                </button>
+
+                                <!-- 2. Download .java -->
+                                <a th:href="@{'/export/version/' + ${v.id}}"
+                                   title="Download this version's .java file"
+                                   class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-300 font-medium text-[11px] border border-dark-700 transition inline-flex items-center gap-1">
+                                    <i data-lucide="download" class="w-3 h-3"></i> Download
+                                </a>
+
+                                <!-- 3. Restore in Studio -->
+                                <a th:href="@{'/generate?versionId=' + ${v.id}}"
+                                   title="Pre-fill Studio with this version to inspect or re-generate"
+                                   class="px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 font-medium text-[11px] border border-indigo-500/20 transition inline-flex items-center gap-1">
+                                    <i data-lucide="refresh-cw" class="w-3 h-3"></i> Restore in Studio
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Code Viewer Modal -->
@@ -537,6 +682,41 @@
             </div>
             <div class="p-4 overflow-y-auto flex-1 bg-dark-950">
                 <pre id="modalCodeContent" class="text-emerald-400 font-mono text-xs leading-relaxed"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dedicated Version Code Viewer Modal -->
+    <div id="versionCodeModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="w-full max-w-4xl rounded-2xl bg-dark-900 border border-dark-800 shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+            <div class="p-4 border-b border-dark-800 flex flex-wrap items-center justify-between gap-3 bg-dark-950">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="git-commit" class="w-4 h-4 text-cyan-400"></i>
+                        <span id="versionModalTitle" class="font-mono font-bold text-xs sm:text-sm text-white">Calculator.java — Version 1</span>
+                        <span id="versionModalBadge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">BASELINE (v1)</span>
+                    </div>
+                    <div id="versionModalMeta" class="text-[11px] font-mono text-slate-400 mt-1">
+                        Recorded: 2026-10-07 19:32:40 &bull; SHA-256: ee28582ced7e...
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" onclick="copyVersionModalCode()" class="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-200 font-mono text-xs transition flex items-center gap-1.5 border border-dark-700">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Code
+                    </button>
+                    <a id="versionModalDownloadBtn" href="#" class="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-200 font-mono text-xs transition flex items-center gap-1.5 border border-dark-700">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Download .java
+                    </a>
+                    <a id="versionModalRestoreBtn" href="#" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-mono text-xs font-semibold transition flex items-center gap-1.5 shadow-md shadow-cyan-600/20">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Restore in Studio
+                    </a>
+                    <button type="button" onclick="closeVersionModal()" class="p-1.5 rounded-lg hover:bg-dark-800 text-slate-400 hover:text-white transition">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 bg-dark-950">
+                <pre id="versionModalCodeContent" class="text-emerald-400 font-mono text-xs leading-relaxed whitespace-pre"></pre>
             </div>
         </div>
     </div>
@@ -873,11 +1053,13 @@
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(tabId).classList.remove('hidden');
 
-            const tabBtns = ['btn-tab-tests', 'btn-tab-diff', 'btn-tab-mutation', 'btn-tab-ai', 'btn-tab-source'];
+            const tabBtns = ['btn-tab-tests', 'btn-tab-versions', 'btn-tab-mutation', 'btn-tab-ai', 'btn-tab-source'];
             tabBtns.forEach(bId => {
                 const btn = document.getElementById(bId);
-                btn.classList.remove('border-cyan-500', 'text-cyan-400', 'font-bold');
-                btn.classList.add('border-transparent', 'text-slate-400');
+                if (btn) {
+                    btn.classList.remove('border-cyan-500', 'text-cyan-400', 'font-bold');
+                    btn.classList.add('border-transparent', 'text-slate-400');
+                }
             });
 
             const activeBtn = document.getElementById('btn-' + tabId);
@@ -1003,6 +1185,106 @@
             if (currentRectifiedCode) {
                 navigator.clipboard.writeText(currentRectifiedCode).then(() => {
                     alert('Rectified source code copied to clipboard!');
+                });
+            }
+        }
+
+        function copyPreviousCode() {
+            const el = document.getElementById('previousCodeBox');
+            if (el) {
+                navigator.clipboard.writeText(el.innerText).then(() => {
+                    alert('Previous source code copied to clipboard!');
+                });
+            }
+        }
+
+        function copyCurrentCode() {
+            const el = document.getElementById('currentCodeBox');
+            if (el) {
+                navigator.clipboard.writeText(el.innerText).then(() => {
+                    alert('Current source code copied to clipboard!');
+                });
+            }
+        }
+
+        let currentVersionModalCode = '';
+
+        function openVersionModal(btn) {
+            const id = btn.getAttribute('data-id');
+            const version = btn.getAttribute('data-version');
+            const hash = btn.getAttribute('data-hash');
+            const date = btn.getAttribute('data-date');
+            const classname = btn.getAttribute('data-classname');
+
+            const codeEl = document.getElementById('version-code-' + id);
+            const code = codeEl ? codeEl.value : '// Code unavailable';
+            currentVersionModalCode = code;
+
+            const titleEl = document.getElementById('versionModalTitle');
+            if (titleEl) titleEl.innerText = `${classname}.java — Revision v${version}`;
+
+            const badgeEl = document.getElementById('versionModalBadge');
+            if (badgeEl) badgeEl.innerText = version == '1' ? 'BASELINE (v1)' : `REVISION (v${version})`;
+
+            const metaEl = document.getElementById('versionModalMeta');
+            if (metaEl) metaEl.innerText = `Recorded: ${date} • SHA-256: ${hash ? (hash.length > 16 ? hash.substring(0, 16) + '...' : hash) : 'N/A'}`;
+
+            const contentEl = document.getElementById('versionModalCodeContent');
+            if (contentEl) contentEl.innerText = code;
+
+            const dlBtn = document.getElementById('versionModalDownloadBtn');
+            if (dlBtn) dlBtn.href = '/export/version/' + id;
+
+            const restBtn = document.getElementById('versionModalRestoreBtn');
+            if (restBtn) restBtn.href = '/generate?versionId=' + id;
+
+            const modal = document.getElementById('versionCodeModal');
+            if (modal) modal.classList.remove('hidden');
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeVersionModal() {
+            const modal = document.getElementById('versionCodeModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function copyVersionModalCode() {
+            if (currentVersionModalCode) {
+                navigator.clipboard.writeText(currentVersionModalCode).then(() => {
+                    alert('Version source code copied to clipboard!');
+                });
+            }
+        }
+
+        function switchCompareVersion(versionId) {
+            if (!versionId) return;
+            const codeEl = document.getElementById('version-code-' + versionId);
+            const box = document.getElementById('previousCodeBox');
+            const dlBtn = document.getElementById('downloadPreviousBtn');
+            if (codeEl && box) {
+                box.innerText = codeEl.value;
+            }
+            if (dlBtn) {
+                dlBtn.href = '/export/version/' + versionId;
+                dlBtn.classList.remove('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        function switchSourceTabView(versionId) {
+            if (!versionId) return;
+            const codeEl = document.getElementById('version-code-' + versionId);
+            const box = document.getElementById('sourceTabCodeBox');
+            if (codeEl && box) {
+                box.innerText = codeEl.value;
+            }
+        }
+
+        function copySourceTabCode() {
+            const box = document.getElementById('sourceTabCodeBox');
+            if (box) {
+                navigator.clipboard.writeText(box.innerText).then(() => {
+                    alert('Source code copied to clipboard!');
                 });
             }
         }

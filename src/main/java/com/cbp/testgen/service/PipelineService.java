@@ -154,22 +154,22 @@ public class PipelineService {
         notifyProgress(progressListener, "Step 2/7: Checking for Version Diffs and Historical Revisions...");
         ProjectEntity project = databaseManager.getOrCreateProject(projectName, "Automated Test Generation Project");
 
-        // Retrieve previous class info before saving the new metadata
-        Optional<ClassMetadataEntity> existingClassOpt = databaseManager.findExistingClass(project.getId(), classInfo.getClassName());
+        // Version Diff: check existing version before saving updated metadata
+        Optional<ClassMetadataEntity> existingOpt = databaseManager.findClassMetadata(project.getId(), classInfo.getClassName());
         ClassInfo previousClassInfo = null;
-        if (existingClassOpt.isPresent()) {
-            String prevSource = existingClassOpt.get().getSourceCode();
+        if (existingOpt.isPresent()) {
+            String prevSource = existingOpt.get().getSourceCode();
             if (prevSource != null && !prevSource.trim().isEmpty() && !prevSource.equals(sourceCode)) {
                 try {
                     previousClassInfo = codeAnalyzer.analyzeSourceCode(prevSource);
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    logger.warn("Could not analyze previous source code for diffing: {}", e.getMessage());
+                }
             }
         }
+        AstDiffAnalyzer.DiffReport diffReport = astDiffAnalyzer.compareVersions(previousClassInfo, classInfo);
 
         ClassMetadataEntity classEntity = databaseManager.saveClassMetadata(project, classInfo);
-
-        // Version Diff
-        AstDiffAnalyzer.DiffReport diffReport = astDiffAnalyzer.compareVersions(previousClassInfo, classInfo);
         String changedJson = objectMapper.writeValueAsString(diffReport.getMethodDiffs());
         databaseManager.recordClassVersion(classEntity, changedJson, sourceCode);
 
